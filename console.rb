@@ -7,5 +7,8 @@ require "spec/spec_helper"
 
 #User::Base.post('', { user: { age: 1, posts: [{ body: 'post1' }, 2] } })
 
+#user = UserWithAddressAndPosts::Son.new(FactoryGirl.attributes_for(:user_with_address_and_posts))
+#user.save('', { status: 200 })
+
 binding.pry
 
