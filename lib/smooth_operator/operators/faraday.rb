@@ -12,14 +12,7 @@ module SmoothOperator
         remote_call = begin
           set_basic_authentication
 
-          response = connection.send(http_verb) do |request|
-            operator_options.each { |key, value| request.options.send("#{key}=", value) }
-            options[:headers].each { |key, value| request.headers[key] = value }
-            params.each { |key, value| request.params[key] = value }
-
-            request.url relative_path
-            request.body = body
-          end
+          response = connection.send(http_verb, relative_path) { |request| request_configuration(request) }
 
           RemoteCall::Faraday.new(response)
         rescue ::Faraday::Error::ConnectionFailed
@@ -38,6 +31,16 @@ module SmoothOperator
 
       def set_basic_authentication
         connection.basic_auth(endpoint_user, endpoint_pass) if Helpers.present?(endpoint_user)
+      end
+
+      def request_configuration(request)
+        operator_options.each { |key, value| request.options.send("#{key}=", value) }
+        
+        options[:headers].each { |key, value| request.headers[key] = value }
+        
+        params.each { |key, value| request.params[key] = value }
+
+        request.body = body
       end
 
     end
