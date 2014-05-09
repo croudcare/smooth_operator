@@ -8,9 +8,13 @@ class TestServer < Sinatra::Base
     username == 'admin' and password == 'admin'
   end
 
-  
+  get '/posts/:id' do
+    post_data = { id: 1, body: 'from_resource_url' }
+    json post_data
+  end
+
   get '/users/:id/posts/:id' do
-    post_data = { id: 1, body: 'from_server' }
+    post_data = { id: 1, body: 'from_nested_url' }
     json post_data
   end
 
@@ -50,6 +54,10 @@ class TestServer < Sinatra::Base
     json data
   end
   
+  get '/users/bad_json' do
+    'ok'
+  end
+
   get '/users/:id' do
     json FactoryGirl.attributes_for(:user_with_address_and_posts)
   end
@@ -68,6 +76,11 @@ class TestServer < Sinatra::Base
 
   post '/users' do
     common_response
+  end
+  
+  post '/users/timeout' do
+    sleep 1
+    json 'ok'
   end
 
   put '/users/:id' do

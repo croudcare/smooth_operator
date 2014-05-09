@@ -16,17 +16,41 @@ module SmoothOperator
 
 
       def success?
-        http_status.between?(200, 299)
+        http_status.between?(200, 299) || http_status == 304
       end
 
       alias :ok? :success?
+
+      def not_success?
+        !success?
+      end
+
+      alias :not_ok? :not_success?
 
       def failure?
         http_status.between?(400, 499)
       end
 
+      alias :failed? :failure?
+
       def error?
         http_status.between?(500, 599) || http_status == 0
+      end
+
+      def not_found?
+        http_status == 404
+      end
+
+      def not_processed?
+        http_status == 422
+      end
+
+      def timeout?
+        false
+      end
+
+      def connection_failed?
+        false
       end
 
       def parsed_response
@@ -42,7 +66,11 @@ module SmoothOperator
       end
 
       def status
-        error? ? nil : success?
+        return nil if error?
+        
+        return true if success?
+
+        not_processed? ? false : nil
       end
 
       def objects
