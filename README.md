@@ -120,7 +120,7 @@ post.save("#{post.id}/save_and_add_to_list", { admin: true, post: { author: 'Age
 ### 2.4) Saving using HTTP Patch verb
 ```ruby
 class Page < MyBlogResource
-  self.save_http_verb = :patch
+  self.update_http_verb = :patch
 end
 
 page = Page.find(2)
@@ -274,8 +274,5 @@ Methods | Behaviour | Arguments | Return
 ## 4) TODO
 
 1. Finish "Methods" and "Behaviours" documentation;
-2. Allow changing the HTTP verb for a specific connection;
-3. FinderMethods specs;
-4. serialization_specs to test the json options for nested classes;
-5. model_schema_specs;
-6. Cache.
+2. ModelSchema specs;
+3. Cache.

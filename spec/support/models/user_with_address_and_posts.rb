@@ -18,7 +18,10 @@ module UserWithAddressAndPosts
     schema(
       age: :int,
       dob: :date,
-      manager: :bool
+      price: :float,
+      manager: :bool,
+      date: :datetime,
+      first_name: :string
     )
 
   end
@@ -27,7 +30,7 @@ module UserWithAddressAndPosts
 
     self.table_name = 'users'
 
-    self.save_http_verb = :patch
+    self.update_http_verb = :patch
 
   end
   
