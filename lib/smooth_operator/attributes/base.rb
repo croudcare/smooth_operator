@@ -5,10 +5,14 @@ module SmoothOperator
 
       protected ##################### PROTECTED ########################
 
-      def cast_to_type(name, value, type, unknown_hash_class, parent_object)
+      def cast_to_type(name, value, parent_object)
+        known_by_schema, type, unknown_hash_class = parent_object.internal_structure.include?(name), parent_object.internal_structure[name], parent_object.class.unknown_hash_class
+
+        return Helpers.duplicate(value) if known_by_schema && type.nil?
+
         case value
         when Array
-          value.map { |array_entry| self.class.new(name, array_entry, type, unknown_hash_class, parent_object).value }
+          value.map { |array_entry| self.class.new(name, array_entry, parent_object).value }
         when Hash
           type.nil? ? new_unknown_hash(value, unknown_hash_class, parent_object) : type.new(value, parent_object: parent_object)
         else
@@ -91,7 +95,7 @@ module SmoothOperator
         hash = {}
 
         attributes.each do |key, value|
-          hash[key] = cast_to_type(key, value, nil, unknown_hash_class, parent_object)
+          hash[key] = cast_to_type(key, value, parent_object)
         end
 
         hash
