@@ -1,5 +1,4 @@
 module SmoothOperator
-
   module Persistence
 
     def self.included(base)
@@ -8,13 +7,12 @@ module SmoothOperator
 
     attr_reader :last_remote_call
 
-
-    def get_identificator
-      get_internal_data(self.class.identificator)
+    def get_primary_key
+      get_internal_data(self.class.primary_key)
     end
 
     def reload(relative_path = nil, data = {}, options = {})
-      raise 'UnknownPath' if Helpers.blank?(relative_path) && (!respond_to?(self.class.identificator) || Helpers.blank?(get_identificator))
+      raise 'UnknownPath' if Helpers.blank?(relative_path) && (!respond_to?(self.class.primary_key) || Helpers.blank?(get_primary_key))
 
       persistence_call(:reload, relative_path, data, options) do |remote_call|
         block_given? ? yield(remote_call) : remote_call.status
@@ -24,7 +22,13 @@ module SmoothOperator
     def new_record?(bypass_cache = false)
       return @new_record if !bypass_cache && defined?(@new_record)
 
-      @new_record = Helpers.blank?(get_identificator)
+      @new_record = Helpers.blank?(get_primary_key)
+    end
+
+    def marked_for_destruction?(bypass_cache = false)
+      return @marked_for_destruction if !bypass_cache && defined?(@marked_for_destruction)
+
+      @marked_for_destruction = ["true", "1", true].include?(get_internal_data(self.class.destroy_key))
     end
 
     def destroyed?
@@ -101,36 +105,40 @@ module SmoothOperator
 
       hash = serializable_hash(options[:serializable_options]).dup
 
-      hash.delete(self.class.identificator)
+      hash.delete(self.class.primary_key)
 
       { self.class.resource_name => hash }.merge(data)
     end
-    
-    
+
+
     module ClassMethods
-      
+
       METHODS_VS_HTTP_VERBS = { reload: :get, create: :post, update: :put, destroy: :delete }
-      
+
       def methods_vs_http_verbs
         Helpers.get_instance_variable(self, :methods_vs_http_verbs, METHODS_VS_HTTP_VERBS.dup)
       end
-      
-      def identificator
-        Helpers.get_instance_variable(self, :identificator, 'id')
+
+      def primary_key
+        Helpers.get_instance_variable(self, :primary_key, 'id')
       end
 
-      attr_writer :identificator
+      attr_writer :primary_key
+
+      def destroy_key
+        Helpers.get_instance_variable(self, :destroy_key, '_destroy')
+      end
+
+      attr_writer :destroy_key
 
       METHODS_VS_HTTP_VERBS.keys.each do |method|
         define_method("#{method}_http_verb=") { |http_verb| methods_vs_http_verbs[method] = http_verb }
       end
-      
+
       def create(attributes = nil, relative_path = nil, data = {}, options = {})
         new(attributes).tap { |object| object.save(relative_path, data, options) }
       end
-      
+
     end
-
   end
-
 end
