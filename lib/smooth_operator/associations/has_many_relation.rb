@@ -1,6 +1,6 @@
 module SmoothOperator
-  module Relation
-    class ArrayRelation < ::SimpleDelegator
+  module Associations
+    class HasManyRelation < SimpleDelegator
 
       attr_reader :object, :association
 
@@ -26,10 +26,12 @@ module SmoothOperator
         new_array_entry
       end
 
+      undef :is_a?
+
       protected ############### PROTECTED ###############
 
       def get_array
-        data = object.get_internal_data(association.to_s)
+        data = object.internal_data_get(association.to_s)
 
         data.nil? ? [] : [*data]
       end

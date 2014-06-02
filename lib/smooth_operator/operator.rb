@@ -12,8 +12,12 @@ module SmoothOperator
 
       relative_path = resource_path(relative_path)
 
+      parent_object = _options[:parent_object]
+
       if !parent_object.nil? && options[:ignore_parent] != true
-        options[:resources_name] ||= "#{parent_object.class.resources_name}/#{parent_object.get_primary_key}/#{self.class.resources_name}"
+        id = Helpers.primary_key(parent_object)
+
+        options[:resources_name] ||= "#{parent_object.class.resources_name}/#{id}/#{self.class.resources_name}"
       end
 
       self.class.make_the_call(http_verb, relative_path, data, options) do |remote_call|
@@ -21,34 +25,20 @@ module SmoothOperator
       end
     end
 
-    protected ######################## PROTECTED ###################
-
     def resource_path(relative_path)
       if Helpers.absolute_path?(relative_path)
         Helpers.remove_initial_slash(relative_path)
       elsif persisted?
-        Helpers.present?(relative_path) ? "#{get_primary_key}/#{relative_path}" : get_primary_key.to_s
+        id = Helpers.primary_key(self)
+
+        Helpers.present?(relative_path) ? "#{id}/#{relative_path}" : id.to_s
       else
         relative_path
       end
     end
 
-    ########################### MODULES BELLOW ###############################
-
-    module HttpMethods
-
-      HTTP_VERBS = %w[get post put patch delete]
-
-      HTTP_VERBS.each do |method|
-        class_eval <<-RUBY, __FILE__, __LINE__ + 1
-          def #{method}(relative_path = '', params = {}, options = {})
-            make_the_call(:#{method}, relative_path, params, options) do |remote_call|
-              block_given? ? yield(remote_call) : remote_call
-            end
-          end
-        RUBY
-      end
-
+    def self.included(base)
+      base.extend(ClassMethods)
     end
 
     module ClassMethods
@@ -67,17 +57,16 @@ module SmoothOperator
 
       attr_writer :headers
 
-
       def make_the_call(http_verb, relative_path = '', data = {}, options = {})
-        operator_args = operator_method_args(http_verb, relative_path, data, options)
+        options = HelperMethods.populate_options(self, options)
 
-        if Helpers.present?(operator_args[4][:hydra])
-          operator_call = Operators::Typhoeus
-        else
-          operator_call = Operators::Faraday
-        end
+        resource_path = resource_path(relative_path, options)
 
-        operator_call.make_the_call(*operator_args) do |remote_call|
+        params, data = *HelperMethods.strip_params(self, http_verb, data)
+
+        operator = HelperMethods.get_me_an_operator(options)
+
+        operator.make_the_call(http_verb, resource_path, params, data, options) do |remote_call|
           block_given? ? yield(remote_call) : remote_call
         end
       end
@@ -86,54 +75,53 @@ module SmoothOperator
         params
       end
 
-      protected #################### PROTECTED ##################
-
-      def operator_method_args(http_verb, relative_path, data, options)
-        options = populate_options(options)
-
-        [http_verb, resource_path(relative_path, options), *strip_params(http_verb, data), options]
-      end
-
-      private #################### PRIVATE ##################
-
-      def populate_options(options)
-        options ||= {}
-
-        OPTIONS.each { |option| options[option] ||= send(option) }
-
-        options[:headers] = headers.merge(options[:headers] || {})
-
-        options
-      end
-
       def resource_path(relative_path, options)
-        _resources_name = options[:resources_name] || self.resources_name
+        resources_name = options[:resources_name] || self.resources_name
 
-        if Helpers.present?(_resources_name)
-          Helpers.present?(relative_path) ? "#{_resources_name}/#{relative_path}" : _resources_name
+        if Helpers.present?(resources_name)
+          Helpers.present?(relative_path) ? "#{resources_name}/#{relative_path}" : resources_name
         else
           relative_path.to_s
         end
       end
 
-      def strip_params(http_verb, data)
+    end
+
+    module HelperMethods
+
+      extend self
+
+      def get_me_an_operator(options)
+        if options[:parallel_connection].nil?
+          Operators::Faraday
+        else
+          Operators::Typhoeus
+        end
+      end
+
+      def populate_options(object, options)
+        options ||= {}
+
+        ClassMethods::OPTIONS.each do |option|
+          options[option] ||= object.send(option)
+        end
+
+        options[:headers] = object.headers.merge(options[:headers] || {})
+
+        options
+      end
+
+      def strip_params(object, http_verb, data)
         data ||= {}
 
         if [:get, :head, :delete].include?(http_verb)
-          [query_string(data), nil]
+          [object.query_string(data), nil]
         else
-          [query_string({}), data]
+          [object.query_string({}), data]
         end
       end
-    end
 
-    include HttpMethods
-
-    def self.included(base)
-      base.extend(ClassMethods)
-      base.extend(HttpMethods)
     end
 
   end
-
 end

@@ -1,15 +1,15 @@
-require "smooth_operator/relation/reflection"
+require "smooth_operator/associations/reflection"
 
 module SmoothOperator
-  module Relation
+  module Associations
     class AssociationReflection < Reflection
 
       attr_reader :related_reflection, :macro
 
       def initialize(association, related_reflection, options)
         super(association, options)
-        @macro = options[:macro] || macro_default(association)
-        @related_reflection = related_reflection
+
+        @related_reflection, @macro = related_reflection, options[:macro]
       end
 
       def primary_key
@@ -61,10 +61,6 @@ module SmoothOperator
       end
 
       private ################################# private
-
-      def macro_default(association)
-        Helpers.plural?(association) ? :has_many : :belongs_to
-      end
 
       def foreign_key_default
         if has_many? || has_one?

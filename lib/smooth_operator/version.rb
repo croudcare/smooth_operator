@@ -1,3 +1,3 @@
 module SmoothOperator
-  VERSION = "1.2.8"
+  VERSION = "1.21.1"
 end

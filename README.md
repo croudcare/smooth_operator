@@ -1,11 +1,19 @@
-# SmoothOperator
+# SmoothOperator [![Code Climate](https://codeclimate.com/repos/536a7b9f6956801228014b02/badges/13f79897976274a9de33/gpa.png)](https://codeclimate.com/repos/536a7b9f6956801228014b02/feed)
 
 Ruby gem, that mimics the ActiveRecord behaviour but through external API's.
 It's a lightweight and flexible alternative to ActiveResource, that responds to a REST API like you expect it too.
 
-Depends only on Faraday gem, no need for ActiveSupport or any other Active* gem.
+Be sure to check out this micro-services example: https://github.com/goncalvesjoao/micro-services-example
 
-Although if I18n is present it will respond to .human_attribute_name method and if ActiveModel is present it will make use of 'ActiveModel::Name' to improve .model_name method.
+Where a Rails4 app lists/creates/edits and destroys blog posts from a Padrino (aka Sinatra) app, using SmoothOperator::Rails instead of ActiveRecord::Base classes.
+
+This micro-services example will also feature other cool stuff like:
+- parallel requests;
+- using HTTP PATCH verb for saving instead of PUT;
+- form errors with simple_form gem;
+- nested objects using cocoon gem;
+- endless-pagination with kaminari gem
+- and others...
 
 ---
 
@@ -139,7 +147,7 @@ page.save # will make a http PATCH call to 'http://myblog.com/api/v0/pages/2'
 remote_call = Page.find(:all) # Will make a GET call to 'http://myblog.com/api/v0/pages'
                               # and will return a SmoothOperator::RemoteCall instance
 
-pages = remote_call.objects # 'pages = remote_call.data' also works
+pages = remote_call.data
 
 # If the server response is positive (http code between 200 and 299):
   remote_call.ok? # true
@@ -179,7 +187,7 @@ pages = remote_call.objects # 'pages = remote_call.data' also works
 remote_call = Page.find(2) # Will make a GET call to 'http://myblog.com/api/v0/pages/2'
                            # and will return a SmoothOperator::RemoteCall instance
 
-page = remote_call.object # 'page = remote_call.data' also works
+page = remote_call.data
 ```
 
 ---
