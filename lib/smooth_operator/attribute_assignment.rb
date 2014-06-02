@@ -13,28 +13,41 @@ module SmoothOperator
 
     attr_reader :_options, :_meta_data
 
-    def assign_attributes(_attributes = {}, options = {})
-      return nil unless _attributes.is_a?(Hash)
+    def assign_attributes(attributes = {}, options = {})
+      return nil unless attributes.is_a?(Hash)
 
-      attributes = _attributes = Helpers.stringify_keys(_attributes)
-
-      if _attributes.include?(self.class.resource_name)
-        attributes = _attributes.delete(self.class.resource_name)
-        @_meta_data = _attributes
-      end
+      attributes = _extract_attributes(attributes)
 
       induce_errors(attributes.delete(self.class.errors_key))
 
-      options.each { |key, value| @_options[key] = value } if options.is_a? Hash
+      @_options.merge!(options) if options.is_a? Hash
 
       attributes.each do |name, value|
         next unless allowed_attribute(name)
 
-        internal_data_push(name, value)
+        if respond_to?("#{name}=")
+          send("#{name}=", value)
+        else
+          internal_data_push(name, value)
+        end
       end
     end
 
     protected ################# PROTECTED METHODS DOWN BELOW ###################
+
+    def _extract_attributes(attributes)
+      _attributes = Helpers.stringify_keys(attributes)
+
+      if _attributes.include?(self.class.resource_name)
+        attributes = _attributes.delete(self.class.resource_name)
+        @_meta_data = _attributes
+      else
+        attributes = _attributes
+        @_meta_data = {}
+      end
+
+      attributes
+    end
 
     def before_initialize(attributes, options); end
 
